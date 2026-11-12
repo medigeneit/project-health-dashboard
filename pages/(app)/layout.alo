@@ -36,10 +36,10 @@
         <span class="api-spinner" aria-hidden="true"></span>
         <span>ডেটা আনা হচ্ছে…</span>
     </div>
-    <div class="api-loader" id="api-loader" role="status" aria-live="polite" hidden>
+    <dialog class="api-loader" id="api-loader" aria-label="সার্ভারের সাথে কাজ চলছে">
         <span class="api-spinner" aria-hidden="true"></span>
-        <span>সার্ভারের সাথে কাজ চলছে…</span>
-    </div>
+        <span>সার্ভারের সাথে কাজ চলছে, একটু অপেক্ষা করুন…</span>
+    </dialog>
     <ProjectDrawer />
     <ImportDialog />
     <SettingsDialog />
@@ -49,25 +49,16 @@
 </template>
 
 <style>
-    .api-loader {
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        z-index: 60;
+    .api-loader[open] {
         display: flex;
         align-items: center;
-        gap: 10px;
-        transform: translateX(-50%);
-        padding: 9px 16px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--surface);
-        box-shadow: var(--shadow);
+        gap: 12px;
+        padding: 16px 22px;
+        border-radius: 14px;
         color: var(--text-2);
-        font-size: 0.85rem;
+        font-size: 0.92rem;
+        outline: none;
     }
-
-    .api-loader[hidden] { display: none; }
 
     .boot {
         position: fixed;

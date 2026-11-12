@@ -44,7 +44,8 @@
         if (P.ui) P.ui.toast(message, status);
     }
 
-    // চলমান সার্ভার কলের সংখ্যা; ১টাও থাকলে লোডার দেখায় (layout.alo-র #api-loader)।
+    // চলমান সার্ভার কলের সংখ্যা; ১টাও থাকলে পুরো পর্দা আটকে লোডার দেখায় (layout.alo-র #api-loader, একটা modal dialog)।
+    // modal বলে খোলা ড্রয়ার বা ডায়ালগের উপরেও থাকে, আর কাজ শেষ না হওয়া পর্যন্ত আর কিছু চাপা যায় না।
     // লোডার অন্তত MIN_SHOW মিলিসেকেন্ড দেখানো হয়, যাতে দ্রুত শেষ হলেও চোখে পড়ে।
     var MIN_SHOW = 700;
     var pending = 0;
@@ -53,17 +54,38 @@
     function busy(delta) {
         pending = Math.max(0, pending + delta);
         var el = typeof document !== 'undefined' && document.getElementById('api-loader');
-        if (!el) return;
+        if (!el || !el.showModal) return;
+        if (!el.dataset.bound) {
+            el.dataset.bound = '1';
+            // Esc চাপলে বন্ধ হবে না; তবু বন্ধ হয়ে গেলে কাজ চলা পর্যন্ত আবার খোলে
+            el.addEventListener('cancel', function (e) {
+                e.preventDefault();
+            });
+            el.addEventListener('close', function () {
+                if (pending > 0) el.showModal();
+            });
+        }
         clearTimeout(hideTimer);
         if (pending > 0) {
-            if (el.hidden) shownAt = Date.now();
-            el.hidden = false;
+            // প্রথমবার ডেটা আনার সময় #boot-ই দেখায়, তাই তখন লোডার লাগে না
+            if (state && !el.open) {
+                shownAt = Date.now();
+                el.showModal();
+            }
             return;
         }
         var wait = Math.max(0, MIN_SHOW - (Date.now() - shownAt));
         hideTimer = setTimeout(function () {
-            if (pending === 0) el.hidden = true;
+            if (pending === 0 && el.open) el.close();
         }, wait);
+    }
+
+    // সেভ চলার সময় পেজ বন্ধ বা reload করতে গেলে ব্রাউজার আগে জিজ্ঞেস করে, নইলে বদল হারিয়ে যায়
+    var saving = 0;
+    if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', function (e) {
+            if (saving > 0) e.preventDefault();
+        });
     }
 
     // প্রথমবার ডেটা আসার আগে পুরো পেজে "ডেটা আনা হচ্ছে" দেখায় (layout.alo-র #boot)
@@ -87,20 +109,39 @@
 
     // সার্ভারে পুরো ডেটা পাঠানো, একটার পর একটা। প্রতিবার তখনকার পুরো ডেটা যায়।
     // ব্যর্থ হলে সার্ভার থেকে আবার আনা হয়, যাতে স্ক্রিন যা দেখায় তা সার্ভারের সাথে মেলে।
+    // queue শেষে true দেয় সেভ হলে, false দেয় না হলে; কখনো reject হয় না।
     function push() {
-        queue = queue.then(
-            function () {
-                return P.api.request('PUT', '/api/data', P.exportData(state)).then(hideOffline);
-            },
-            function () {}
-        );
-        queue = queue.catch(function (err) {
-            if (err.unauthorized) return P.api.logout();
-            notify('সার্ভারে সেভ হয়নি: ' + err.message, 'eol');
-            return P.store.pull().catch(function (e) {
-                showOffline(e.message);
+        saving += 1;
+        queue = queue
+            .then(function () {
+                return P.api.request('PUT', '/api/data', P.exportData(state));
+            })
+            .then(
+                function () {
+                    hideOffline();
+                    return true;
+                },
+                function (err) {
+                    if (err.unauthorized) {
+                        P.api.logout();
+                        return false;
+                    }
+                    notify('সার্ভারে সেভ হয়নি: ' + err.message, 'eol');
+                    return P.store.pull().then(
+                        function () {
+                            return false;
+                        },
+                        function (e) {
+                            showOffline(e.message);
+                            return false;
+                        }
+                    );
+                }
+            )
+            .then(function (ok) {
+                saving -= 1;
+                return ok;
             });
-        });
     }
 
     P.api = {
@@ -186,6 +227,16 @@
 
         get: function () {
             return state;
+        },
+
+        // সার্ভারে সেভ চলছে কি না
+        saving: function () {
+            return saving > 0;
+        },
+
+        // চলমান সেভ শেষ হলে resolve হয়: true মানে সার্ভারে সেভ হয়েছে
+        saved: function () {
+            return saving > 0 ? queue : Promise.resolve(true);
         },
 
         // পুরো ডেটা বদল: মেমোরিতে বদলায় আর সার্ভারে পাঠানো হয়। সার্ভার না থাকলে বদল হয় না।

@@ -135,7 +135,18 @@
         });
     };
 
+    // সফলতার বার্তা সার্ভারে সেভ শেষ হওয়ার পরে দেখায়; সেভ না হলে দেখায়ই না (তখন store নিজে ভুলের বার্তা দেয়)
     ui.toast = function (message, status, action) {
+        if ((!status || status === 'ok') && P.store.saving()) {
+            P.store.saved().then(function (ok) {
+                if (ok) showToast(message, status, action);
+            });
+            return;
+        }
+        showToast(message, status, action);
+    };
+
+    function showToast(message, status, action) {
         var box = ui.$('#toasts');
         if (!box) return;
         var el = document.createElement('div');
@@ -156,7 +167,7 @@
         setTimeout(function () {
             el.remove();
         }, action ? 9000 : 4000);
-    };
+    }
 
     ui.undoToast = function (message) {
         ui.toast(message, 'ok', {
