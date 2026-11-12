@@ -22,14 +22,11 @@
                     </div>
                 </div>
                 <div class="section">
-                    <span class="section-title">নতুন করে শুরু</span>
-                    <p class="small muted">এর পরও "শেষ বদল ফিরিয়ে আনুন" দিয়ে একবার ফেরা যায়। তবু আগে JSON export করে রাখা ভালো।</p>
-                    <div class="row">
-                        <button class="btn btn-sm" type="button" data-reset="sample">নমুনা ডেটা দেখুন</button>
-                        <button class="btn btn-sm btn-danger" type="button" data-reset="all">সব মুছুন</button>
-                    </div>
+                    <span class="section-title">সার্ভার</span>
+                    <label class="field"><span>অ্যাডমিন টোকেন</span><input type="password" name="token" autocomplete="off"><small>সেভ আর হালনাগাদের জন্য। শুধু এই ব্রাউজারে থাকে।</small></label>
+                    <div class="row"><button class="btn btn-sm btn-danger" type="button" data-logout>লগআউট</button></div>
                 </div>
-                <p class="small muted credit">সব ডেটা থাকে শুধু এই ব্রাউজারে। সাপোর্টের তারিখ <a href="https://endoflife.date" target="_blank" rel="noopener">endoflife.date</a> থেকে। <a href="{{ data.site.repo }}" target="_blank" rel="noopener">সোর্স কোড</a> · MIT · <a href="https://github.com/msilabs/alo" target="_blank" rel="noopener">আলো (Alo)</a> দিয়ে বানানো।</p>
+                <p class="small muted credit">ডেটা থাকে backend-এর ডেটাবেসে; এই ব্রাউজারে তার একটা কপি থাকে। সাপোর্টের তারিখ <a href="https://endoflife.date" target="_blank" rel="noopener">endoflife.date</a> থেকে। <a href="{{ data.site.repo }}" target="_blank" rel="noopener">সোর্স কোড</a> · MIT · <a href="https://github.com/msilabs/alo" target="_blank" rel="noopener">আলো (Alo)</a> আর <a href="https://github.com/msilabs/adhar" target="_blank" rel="noopener">আধার (Adhar)</a> দিয়ে বানানো।</p>
             </div>
             <div class="sheet-foot">
                 <span></span>
@@ -48,10 +45,15 @@
     const form = $el.querySelector('form');
     ui.bindDialog($el);
 
+    $el.querySelector('[data-logout]').addEventListener('click', function () {
+        P.api.logout();
+    });
+
     ui.openSettings = function () {
         const s = P.store.get().settings;
         form.elements.redDays.value = s.redDays;
         form.elements.yellowDays.value = s.yellowDays;
+        form.elements.token.value = P.api.token();
         ui.setTheme(ui.getTheme());
         $el.showModal();
     };
@@ -60,38 +62,10 @@
         e.preventDefault();
         const el = form.elements;
         const s = P.normalizeSettings({ redDays: el.redDays.value, yellowDays: el.yellowDays.value });
+        P.api.setToken(el.token.value.trim());
         P.store.update(function (next) { next.settings = s; });
         $el.close();
         ui.toast('সেটিংস সেভ হয়েছে।');
     });
 
-    const RESETS = {
-        sample: { ask: 'এখনকার প্রজেক্টগুলোর বদলে নমুনা প্রজেক্ট বসবে।', ok: 'নমুনা বসান', label: 'নমুনা ডেটা বসানো', done: 'নমুনা ডেটা বসানো হয়েছে।' },
-        all: { ask: 'সব প্রজেক্ট আর সেটিংস মুছে যাবে, ক্যাটালগ সাইটের শুরুর অবস্থায় ফিরবে।', ok: 'সব মুছুন', label: 'সব কিছু মুছে ফেলা', done: 'শুরুর অবস্থায় ফেরা হয়েছে।' }
-    };
-
-    $el.addEventListener('click', function (e) {
-        const b = e.target.closest('[data-reset]');
-        if (!b) return;
-        const kind = b.dataset.reset;
-        const r = RESETS[kind];
-        ui.confirm(r.ask, r.ok).then(function (yes) {
-            if (!yes) return;
-            return P.store.seed().then(function (seed) {
-                let next;
-                if (kind === 'sample') {
-                    next = P.clone(P.store.get());
-                    next.projects = seed.projects;
-                    next.meta.sample = true;
-                } else {
-                    next = P.emptyData();
-                    next.catalog = seed.catalog;
-                    next.meta.catalogSeed = seed.meta.catalogSeed;
-                }
-                P.store.apply(next, r.label);
-                $el.close();
-                ui.undoToast(r.done);
-            });
-        });
-    });
 </script>

@@ -8,40 +8,5 @@
 </head>
 
 <template>
-    <div class="app" id="app">
-        <Sidebar />
-        <div class="scrim" data-action="nav-close"></div>
-        <div class="main">
-            <header class="topbar">
-                <button class="btn btn-ghost btn-icon menu-toggle" type="button" data-action="nav-open" aria-label="মেনু খুলুন"><Icon name="menu" /></button>
-                <button class="search-trigger" type="button" data-action="search"><Icon name="search" /><span>প্রজেক্ট, প্রোডাক্ট বা ভার্সন খুঁজুন…</span><kbd id="kbd-mod">⌘</kbd><kbd>K</kbd></button>
-                <span class="spacer"></span>
-                <a class="btn" href="{{ data.site.repo }}" target="_blank" rel="noopener" aria-label="GitHub-এ স্টার দিন"><Icon name="star" /><span class="label">GitHub-এ স্টার</span></a>
-                <a class="btn btn-ghost" href="{{ data.site.repo }}/issues/new" target="_blank" rel="noopener" aria-label="সমস্যা বা পরামর্শ জানান"><Icon name="bug" /><span class="label">সমস্যা জানান</span></a>
-            </header>
-            <main id="main" class="page">
-                <div class="sample-bar" id="sample-bar" hidden>
-                    <Icon name="sparkles" />
-                    <span>এখন নমুনা ডেটা দেখাচ্ছে।</span>
-                    <button class="link-btn" type="button" data-action="import">নিজের ডেটা import করুন</button>
-                    <button class="link-btn" type="button" data-action="sample-clear">নমুনা মুছে শুরু করুন</button>
-                </div>
-                <slot />
-            </main>
-            <footer class="site-foot">
-                <span><a href="https://github.com/msilabs" target="_blank" rel="noopener">msilabs</a>-এর <a href="https://github.com/msilabs/alo" target="_blank" rel="noopener">আলো (Alo)</a> দিয়ে বানানো</span>
-                <span><a href="{{ data.site.repo }}" target="_blank" rel="noopener">সোর্স কোড</a> · MIT</span>
-            </footer>
-        </div>
-    </div>
-    <ProjectDrawer />
-    <ImportDialog />
-    <SettingsDialog />
-    <PromptDialog />
-    <QuickSearch />
-    <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+    <slot />
 </template>
-
-<script>
-    PHD.ui.initLayout();
-</script>

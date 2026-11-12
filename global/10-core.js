@@ -157,6 +157,9 @@ var PHD = (globalThis.PHD = globalThis.PHD || {});
         return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' });
     };
 
+    // backend (Adhar API)-এর ঠিকানা। adhar dev-এর ডিফল্ট পোর্ট; deploy করলে এখানে বদলান।
+    P.API_URL = 'http://localhost:8134';
+
     // GitHub Pages-এর সাব-পাথ (যেমন /project-health-dashboard/) সহ লিংক
     P.url = function (path) {
         var base = (globalThis.document && document.documentElement.dataset.base) || '/';

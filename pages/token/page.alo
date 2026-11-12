@@ -1,0 +1,165 @@
+<head>
+    <title>প্রবেশ | {{ data.site.name }}</title>
+    <script>try { if (localStorage.getItem('phd:token')) location.replace((document.documentElement.dataset.base || '/').replace(/\/$/, '') + '/'); } catch (e) {}</script>
+</head>
+
+<template>
+    <main class="login">
+        <section class="login-card card" aria-labelledby="login-title">
+            <div class="login-brand"><span class="brand-mark"><Icon name="pulse" /></span></div>
+            <h1 id="login-title">{{ data.site.name }}</h1>
+
+            <form id="login" novalidate>
+                <label class="field">
+                    <span>অ্যাডমিন টোকেন</span>
+                    <input type="password" name="token" autocomplete="off" required placeholder="অ্যাডমিন টোকেন">
+                </label>
+                <p class="notice s-eol" id="login-error" role="alert" hidden></p>
+                <button class="btn btn-primary login-submit" type="submit">লগইন</button>
+            </form>
+
+            <div class="login-status" aria-hidden="true">
+                <span><i class="dot s-ok"></i>সাপোর্ট চলছে</span>
+                <span><i class="dot s-warning"></i>শিগগির শেষ</span>
+                <span><i class="dot s-eol"></i>সাপোর্ট শেষ</span>
+            </div>
+        </section>
+    </main>
+</template>
+
+<style>
+    .login {
+        position: relative;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        overflow: hidden;
+        background: radial-gradient(900px 480px at 50% -8%, var(--bg-glow), transparent 70%), var(--bg);
+    }
+
+    .login-card {
+        width: min(400px, 100%);
+        padding: 34px 30px 24px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .login-brand { display: flex; justify-content: center; }
+
+    .login .brand-mark {
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 16px;
+    }
+
+    .login h1 {
+        margin: 18px 0 6px;
+        font-size: 1.4rem;
+        letter-spacing: -0.02em;
+    }
+
+    .login-sub {
+        margin: 0 auto 24px;
+        max-width: 30ch;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    #login {
+        display: grid;
+        gap: 14px;
+        text-align: left;
+    }
+
+    #login input {
+        letter-spacing: 0.08em;
+        padding: 8px 16px;
+        border-radius: 12px;
+    }
+
+    .login-submit {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .login-submit:disabled { opacity: 0.7; cursor: progress; }
+
+    .login-hint {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.6;
+    }
+
+    .login-hint code {
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: var(--surface-2);
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+    }
+
+    .login-status {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px 16px;
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.76rem;
+    }
+
+    .login-status span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .login-status .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .login-status .s-ok { color: var(--ok); }
+    .login-status .s-warning { color: var(--warning); }
+    .login-status .s-eol { color: var(--eol); }
+
+    @media (max-width: 420px) {
+        .login-card { padding: 28px 22px 20px; }
+    }
+</style>
+
+<script>
+    const P = PHD;
+    const form = document.querySelector('#login');
+    const error = document.querySelector('#login-error');
+    const button = form.querySelector('button');
+
+    function show(message) {
+        error.textContent = message;
+        error.hidden = false;
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        error.hidden = true;
+        const token = form.elements.token.value.trim();
+        if (!token) return show('টোকেন লিখুন।');
+        button.disabled = true;
+        button.textContent = 'যাচাই হচ্ছে…';
+        P.api.setToken(token);
+        P.api.request('GET', '/api/auth/check').then(function () {
+            location.replace(P.url('/'));
+        }).catch(function (err) {
+            P.api.setToken('');
+            show(err.message);
+            button.disabled = false;
+            button.textContent = 'লগইন';
+        });
+    });
+</script>

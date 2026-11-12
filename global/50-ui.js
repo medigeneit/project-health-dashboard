@@ -105,6 +105,13 @@
         }
     };
 
+    // এখন আসলে ডার্ক দেখাচ্ছে কিনা (নিজের পছন্দ বা সিস্টেম, যেটা কার্যকর)
+    ui.isDark = function () {
+        var forced = document.documentElement.dataset.theme;
+        if (forced) return forced === 'dark';
+        return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    };
+
     ui.setTheme = function (mode) {
         try {
             if (mode === 'light' || mode === 'dark') localStorage.setItem('phd:theme', mode);
@@ -116,6 +123,15 @@
         else delete document.documentElement.dataset.theme;
         ui.$$('[data-theme-set]').forEach(function (b) {
             b.setAttribute('aria-pressed', String(b.dataset.themeSet === mode));
+        });
+        // ডার্কে থাকলে সূর্য (আলোতে যাবে), লাইটে থাকলে চাঁদ (ডার্কে যাবে)
+        var dark = ui.isDark();
+        ui.$$('[data-theme-icon]').forEach(function (el) {
+            el.hidden = (el.dataset.themeIcon === 'light') !== dark;
+        });
+        ui.$$('[data-theme-toggle]').forEach(function (b) {
+            b.setAttribute('aria-label', dark ? 'লাইট থিম' : 'ডার্ক থিম');
+            b.setAttribute('data-tip', dark ? 'লাইট থিমে যান' : 'ডার্ক থিমে যান');
         });
     };
 
@@ -518,6 +534,8 @@
             'new-project': function () { ui.openProject(null); },
             'nav-open': function () { if (app) app.classList.toggle('nav-open', true); },
             'nav-close': closeNav,
+            'theme-toggle': function () { ui.setTheme(ui.isDark() ? 'light' : 'dark'); },
+            reload: function () { location.reload(); },
             undo: function () {
                 if (P.store.undo()) ui.toast('আগের অবস্থায় ফেরানো হয়েছে।');
             },

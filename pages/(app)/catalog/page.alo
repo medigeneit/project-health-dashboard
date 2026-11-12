@@ -14,19 +14,6 @@
         </div>
     </div>
 
-    <div class="notice" id="refresh-preview" hidden>
-        <div class="spread">
-            <div class="stack stack-sm">
-                <b>endoflife.date-এর তারিখ মিলিয়ে নিলে</b>
-                <div id="refresh-body"></div>
-            </div>
-            <div class="row">
-                <button class="btn btn-sm" type="button" id="refresh-cancel">বাতিল</button>
-                <button class="btn btn-primary btn-sm" type="button" id="refresh-apply">প্রয়োগ করুন</button>
-            </div>
-        </div>
-    </div>
-
     <section class="card">
         <div class="toolbar">
             <div class="segmented" id="kind" role="tablist" aria-label="ক্যাটালগ"></div>
@@ -88,7 +75,6 @@
     const form = dialog.querySelector('form');
     const openOld = {};
     let editing = null;
-    let pendingRefresh = null;
 
     function categories(data, kind) {
         const map = Object.assign({}, P.CATEGORIES[kind]);
@@ -328,42 +314,22 @@
 
     /* ---------- সব প্রোডাক্ট হালনাগাদ ---------- */
 
-    ui.$('#refresh').addEventListener('click', async function (e) {
+    ui.$('#refresh').addEventListener('click', function (e) {
         const btn = e.currentTarget;
         const label = btn.querySelector('span');
-        const data = P.store.get();
-        const jobs = [];
-        P.KINDS.forEach(function (k) { data.catalog[k].forEach(function (p) { if (p.eolSlug) jobs.push({ kind: k, product: p }); }); });
-        if (!jobs.length) return ui.toast('কোনো প্রোডাক্টে endoflife.date-এর নাম নেই।', 'warning');
+        const text = label.textContent;
         btn.disabled = true;
-        const fresh = { tech: [], env: [] };
-        const failed = [];
-        for (let i = 0; i < jobs.length; i++) {
-            label.textContent = 'আনা হচ্ছে ' + P.num(i + 1) + '/' + P.num(jobs.length);
-            try {
-                fresh[jobs[i].kind].push(P.productFromEndOfLife(await P.fetchEndOfLife(jobs[i].product.eolSlug), jobs[i].kind, { id: jobs[i].product.id }));
-            } catch (err) {
-                failed.push(jobs[i].product.name);
-            }
-        }
-        btn.disabled = false;
-        label.textContent = 'endoflife.date থেকে হালনাগাদ';
-        pendingRefresh = P.mergeData(P.store.get(), P.normalizeData({ catalog: fresh }), 'merge');
-        const diff = ui.diffHtml(P.store.get(), P.normalizeData(pendingRefresh));
-        ui.$('#refresh-body').innerHTML = diff.html + (failed.length ? '<p class="small muted">আনা যায়নি: ' + esc(failed.join(', ')) + '</p>' : '');
-        ui.$('#refresh-apply').disabled = diff.empty;
-        ui.$('#refresh-preview').hidden = false;
-    });
-    ui.$('#refresh-apply').addEventListener('click', function () {
-        if (!pendingRefresh) return;
-        P.store.apply(pendingRefresh, 'ক্যাটালগ হালনাগাদ');
-        pendingRefresh = null;
-        ui.$('#refresh-preview').hidden = true;
-        ui.undoToast('ক্যাটালগ হালনাগাদ হয়েছে।');
-    });
-    ui.$('#refresh-cancel').addEventListener('click', function () {
-        pendingRefresh = null;
-        ui.$('#refresh-preview').hidden = true;
+        label.textContent = 'সার্ভার আনছে…';
+        P.store.refreshCatalog().then(function (res) {
+            const failed = res.failed.length ? ' ' + P.num(res.failed.length) + 'টি আনা যায়নি।' : '';
+            ui.toast(P.num(res.updated.length) + 'টি প্রোডাক্ট হালনাগাদ হয়েছে।' + failed, res.failed.length ? 'warning' : undefined);
+            render();
+        }).catch(function (err) {
+            ui.toast('হালনাগাদ হয়নি: ' + err.message, 'eol');
+        }).finally(function () {
+            btn.disabled = false;
+            label.textContent = text;
+        });
     });
 
     /* ---------- তালিকার ঘটনা ---------- */
