@@ -44,6 +44,14 @@
         if (P.ui) P.ui.toast(message, status);
     }
 
+    // চলমান সার্ভার কলের সংখ্যা; ১টাও থাকলে লোডার দেখায় (layout.alo-র #api-loader)
+    var pending = 0;
+    function busy(delta) {
+        pending = Math.max(0, pending + delta);
+        var el = typeof document !== 'undefined' && document.getElementById('api-loader');
+        if (el) el.hidden = pending === 0;
+    }
+
     // সার্ভার না পেলে পেজের উপরে একটা বার্তা, আর আবার চেষ্টার বাটন (অবস্থা: layout.alo-র #server-status)
     function showOffline(message) {
         var el = typeof document !== 'undefined' && document.getElementById('server-status');
@@ -92,7 +100,7 @@
         },
 
         // ফেরত দেয় JSON; সার্ভার ভুল দিলে error.message সহ throw করে। টোকেন ভুল হলে error.unauthorized = true
-        request: function (method, path, body) {
+        send: function (method, path, body) {
             var headers = { Authorization: 'Bearer ' + P.api.token() };
             var init = { method: method, headers: headers };
             if (body !== undefined) {
@@ -116,6 +124,18 @@
                         return json;
                     });
                 });
+        },
+
+        // সব সার্ভার কল এখান দিয়ে যায়, তাই লোডার সবসময় ঠিক দেখায়
+        request: function (method, path, body) {
+            busy(1);
+            return P.api.send(method, path, body).then(function (json) {
+                busy(-1);
+                return json;
+            }, function (err) {
+                busy(-1);
+                throw err;
+            });
         }
     };
 
