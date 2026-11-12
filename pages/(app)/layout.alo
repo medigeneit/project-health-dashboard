@@ -32,6 +32,10 @@
             </footer>
         </div>
     </div>
+    <div class="boot" id="boot" role="status" aria-live="polite">
+        <span class="api-spinner" aria-hidden="true"></span>
+        <span>ডেটা আনা হচ্ছে…</span>
+    </div>
     <div class="api-loader" id="api-loader" role="status" aria-live="polite" hidden>
         <span class="api-spinner" aria-hidden="true"></span>
         <span>সার্ভারের সাথে কাজ চলছে…</span>
@@ -64,6 +68,22 @@
     }
 
     .api-loader[hidden] { display: none; }
+
+    .boot {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: var(--bg);
+        color: var(--muted);
+        font-size: 0.92rem;
+    }
+
+    .boot[hidden] { display: none; }
 
     .api-spinner {
         width: 14px;

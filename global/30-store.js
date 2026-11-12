@@ -44,12 +44,32 @@
         if (P.ui) P.ui.toast(message, status);
     }
 
-    // চলমান সার্ভার কলের সংখ্যা; ১টাও থাকলে লোডার দেখায় (layout.alo-র #api-loader)
+    // চলমান সার্ভার কলের সংখ্যা; ১টাও থাকলে লোডার দেখায় (layout.alo-র #api-loader)।
+    // লোডার অন্তত MIN_SHOW মিলিসেকেন্ড দেখানো হয়, যাতে দ্রুত শেষ হলেও চোখে পড়ে।
+    var MIN_SHOW = 700;
     var pending = 0;
+    var shownAt = 0;
+    var hideTimer = null;
     function busy(delta) {
         pending = Math.max(0, pending + delta);
         var el = typeof document !== 'undefined' && document.getElementById('api-loader');
-        if (el) el.hidden = pending === 0;
+        if (!el) return;
+        clearTimeout(hideTimer);
+        if (pending > 0) {
+            if (el.hidden) shownAt = Date.now();
+            el.hidden = false;
+            return;
+        }
+        var wait = Math.max(0, MIN_SHOW - (Date.now() - shownAt));
+        hideTimer = setTimeout(function () {
+            if (pending === 0) el.hidden = true;
+        }, wait);
+    }
+
+    // প্রথমবার ডেটা আসার আগে পুরো পেজে "ডেটা আনা হচ্ছে" দেখায় (layout.alo-র #boot)
+    function hideBoot() {
+        var el = typeof document !== 'undefined' && document.getElementById('boot');
+        if (el) el.hidden = true;
     }
 
     // সার্ভার না পেলে পেজের উপরে একটা বার্তা, আর আবার চেষ্টার বাটন (অবস্থা: layout.alo-র #server-status)
@@ -145,6 +165,7 @@
             return P.api.request('GET', '/api/data').then(function (raw) {
                 state = P.stripMeta(P.normalizeData(raw));
                 hideOffline();
+                hideBoot();
                 emit('server');
                 return state;
             });
@@ -157,6 +178,7 @@
                 ready = null;
                 if (err.unauthorized) return P.api.logout();
                 showOffline(err.message);
+                hideBoot();
                 throw err;
             });
             return ready;
