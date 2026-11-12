@@ -158,7 +158,8 @@ var PHD = (globalThis.PHD = globalThis.PHD || {});
     };
 
     // backend (Adhar API)-এর ঠিকানা। adhar dev-এর ডিফল্ট পোর্ট; deploy করলে এখানে বদলান।
-    P.API_URL = 'https://api-project-health-dashboard.onrender.com';
+    // P.API_URL = 'https://api-project-health-dashboard.onrender.com';
+    P.API_URL = 'https://api-project-health-dashboard.vercel.app';
 
     // GitHub Pages-এর সাব-পাথ (যেমন /project-health-dashboard/) সহ লিংক
     P.url = function (path) {
